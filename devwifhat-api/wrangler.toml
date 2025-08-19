@@ -1,0 +1,9 @@
+name = "devwifhat-api"
+main = "worker.js"
+compatibility_date = "2024-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "devwifhat-db"
+database_id = "54261889-91bc-4b5d-a115-78a170f8d37e"
+

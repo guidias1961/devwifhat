@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevWifHat - Meme Auditor for PulseChain</title>
+<meta name="description" content="DevWifHat audits PulseChain tokens with a meme-first UI. Hype Thermometer and Safety Score from on-chain and socials.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07030f; --text:#f7f4ff; --muted:#b9b3e5;
+    --vio:#b159ff; --vio2:#d18bff; --cy:#31e9ff;
+    --lime:#7dff7a; --hot:#ff2d89; --sun:#ffd34d;
+    --panel:#130d2a; --accent:#8d5cff; --n:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--text); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background:
+      radial-gradient(60% 80% at 75% 10%, rgba(177,89,255,.27), transparent 55%),
+      radial-gradient(60% 80% at 15% 90%, rgba(49,233,255,.20), transparent 55%),
+      conic-gradient(from 210deg at 50% 50%, #0c0820, #0b0522, #0b0620);
+  }
+  .notch{
+    position:relative;
+    clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n));
+    border:1px solid rgba(255,255,255,.08);
+    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 -12px 24px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.45);
+  }
+  .notch:before{content:""; position:absolute; inset:0; background:linear-gradient(135deg, rgba(255,255,255,.16), transparent 40%, transparent 60%, rgba(255,255,255,.08)); mix-blend-mode:screen; opacity:.6; pointer-events:none}
+  header{position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.4) blur(6px);}
+  .wrap{max-width:1160px; margin:0 auto; padding:16px;}
+  .row{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px}
+  .logo{width:50px; height:50px; border-radius:10px; background:#000 url('logo.png') center/cover no-repeat; box-shadow:0 0 18px rgba(177,89,255,.35)}
+  .title{font-weight:900; font-size:24px}
+  .subtitle{font-size:12px; color:var(--muted); margin-top:-6px}
+  .spacer{flex:1}
+  .btn{--n:10px; display:inline-flex; align-items:center; gap:8px; padding:10px 14px; font-weight:800; text-decoration:none; color:#fff; cursor:pointer; transition:transform .08s ease, filter .2s ease}
+  .btn:hover{transform:translateY(-1px) rotate(-.5deg); filter:saturate(1.2)}
+  .btn.buy{background:linear-gradient(180deg,#2b145e,#1b0f3d)}
+  .btn.tw{background:linear-gradient(180deg,#0b3451,#071f31)}
+  .btn.tg{background:linear-gradient(180deg,#0b4734,#07261c)}
+  .hero{padding:24px 16px 10px}
+  .hero .big{font-size:34px; font-weight:900; margin:0 0 6px; text-shadow:0 4px 30px rgba(209,139,255,.45)}
+  .hero p{margin:0; color:#ddd7ff}
+  .glitch{position:relative; display:inline-block}
+  .glitch:before,.glitch:after{content:attr(data-text); position:absolute; left:0; top:0; right:0}
+  .glitch:before{transform:translate(1px,0); color:var(--vio2); opacity:.8; mix-blend:screen}
+  .glitch:after{transform:translate(-1px,0); color:var(--cy); opacity:.7; mix-blend:screen}
+  .grid{display:grid; grid-template-columns:1fr; gap:16px}
+  @media(min-width:960px){ .grid{grid-template-columns:1.15fr .85fr} }
+  .panel{padding:14px}
+  .muted{color:var(--muted)}
+  .row2{display:flex; gap:10px; flex-wrap:wrap}
+  .field{flex:1; min-width:220px}
+  .input{--n:12px; width:100%; padding:12px; background:linear-gradient(180deg,#160e30,#100827); border:1px solid rgba(255,255,255,.08); color:#fff; font-weight:700; outline:none; box-shadow:inset 0 0 0 1px rgba(141,92,255,.15), inset 0 10px 20px rgba(0,0,0,.45); clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n))}
+  .input::placeholder{color:#8d85c6}
+  .btn.audit{background:linear-gradient(180deg,#341067,#1f0a40)}
+  .btn.audit:hover{animation:wig .35s linear}
+  @keyframes wig{0%{transform:translateY(-1px) rotate(0)}25%{transform:translateY(-1px) rotate(1.2deg)}50%{transform:translateY(-1px) rotate(-1.2deg)}100%{transform:translateY(-1px) rotate(0)}}
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; margin-top:10px}
+  .card{padding:12px; background:linear-gradient(180deg,#150f33,#120a2a)}
+  .card:hover{transform:translateY(-2px) rotate(-.4deg); transition:transform .12s ease}
+  .head{display:flex; gap:10px; align-items:center}
+  .pic{width:38px; height:38px; border-radius:10px; background:#000 center/cover no-repeat; box-shadow:0 0 16px rgba(255,211,77,.25)}
+  .token{font-weight:900; letter-spacing:.3px}
+  .pair{font-size:12px; color:#c7c1ff}
+  .kv{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px}
+  .micro{padding:8px; font-size:12px; background:linear-gradient(180deg,#180e39,#130a2e); border:1px solid rgba(255,255,255,.06); box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+  .row-scores{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px}
+  .thermo{position:relative; height:150px; overflow:hidden; background:linear-gradient(180deg,#0b071a,#130a2e); border:1px solid rgba(255,255,255,.06); clip-path:polygon(var(--n) 0,100% 0,100% calc(100% - var(--n)),calc(100% - var(--n)) 100%,0 100%,0 var(--n))}
+  .thermo .fill{position:absolute; bottom:0; left:0; right:0; height:0%; background:linear-gradient(0deg,var(--hot),#ff6e3a,#ffd34d); box-shadow:0 -8px 24px rgba(255,45,137,.35) inset; transition:height .8s ease}
+  .thermo .label{position:absolute; top:8px; left:8px; font-size:12px}
+  .bubbles span{position:absolute; bottom:-10px; width:6px; height:6px; border-radius:50%; background:#fff; opacity:.35; animation:rise 3s linear infinite}
+  @keyframes rise{from{transform:translateY(0) scale(1)} to{transform:translateY(-180px) scale(1.6); opacity:.05}}
+  .ring{width:120px; height:120px; display:grid; place-items:center}
+  .ring svg{width:120px; height:120px}
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; font-size:12px; background:linear-gradient(180deg,#1b1243,#140e33); border:1px solid rgba(255,255,255,.08); border-radius:999px}
+  .list-inline{display:flex; gap:6px; flex-wrap:wrap}
+  .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px}
+  .switch{display:flex; align-items:center; gap:6px; font-size:12px}
+  .switch input{accent-color:var(--vio)}
+  footer{padding:36px 16px; text-align:center; color:#d7d1ff; font-size:12px}
+  .warning{color:#ffb7c8}
+  .hats{position:fixed; inset:0; pointer-events:none; opacity:.06; z-index:-1; background:url('logo.png') repeat; background-size:120px; filter:saturate(1.4) drop-shadow(0 0 12px rgba(177,89,255,.6))}
+  #err{margin-top:10px}
+
+  /* Leaderboard */
+  .board{display:grid; grid-template-columns:1fr; gap:12px}
+  @media(min-width:900px){ .board{grid-template-columns:1fr 1fr 1fr} }
+  .board .col{padding:12px}
+  .board h4{margin:0 0 8px; font-weight:900}
+  .rank{display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:8px; background:linear-gradient(180deg,#160e33,#100a24); border:1px solid rgba(255,255,255,.06)}
+  .rank .pos{width:26px; height:26px; display:grid; place-items:center; font-weight:900; border-radius:6px; background:linear-gradient(180deg,#2a1857,#160a3a)}
+  .rank .sym{font-weight:900}
+  .rank small{color:#cfcaf5}
+</style>
+</head>
+<body>
+  <div class="hats"></div>
+
+  <header class="notch">
+    <div class="wrap row">
+      <div class="brand">
+        <div class="logo notch" style="--n:8px"></div>
+        <div>
+          <div class="title"><span class="glitch" data-text="DevWifHat">DevWifHat</span></div>
+          <div class="subtitle">PulseChain meme auditor - hype and safety signals</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <a class="btn tg notch" href="https://t.me/your_telegram_here" target="_blank" rel="noopener">Telegram</a>
+      <a class="btn tw notch" href="https://x.com/your_twitter_here" target="_blank" rel="noopener">Twitter</a>
+      <a class="btn buy notch" href="https://pulsex.com/swap" target="_blank" rel="noopener">Buy</a>
+    </div>
+  </header>
+
+  <section class="wrap hero">
+    <h1 class="big"><span class="glitch" data-text="Audits that bop.">Audits that bop.</span> Hype you can flex.</h1>
+    <p>Paste a PulseChain token or pair. We sniff volume, txs, age, liquidity, links and socials to cook a <b>Hype Thermometer</b> and a <b>Safety Score</b>. Meme mode is on by default.</p>
+    <div class="toolbar">
+      <label class="switch notch" style="padding:6px 10px"><input id="memeToggle" type="checkbox" checked> Meme mode</label>
+      <span class="badge">Press H for confetti on high hype</span>
+    </div>
+  </section>
+
+  <section class="wrap grid">
+    <div class="panel notch">
+      <h3>Submit a token for instant audit</h3>
+      <div class="row2">
+        <div class="field">
+          <input id="q" class="input" placeholder="Paste token/pair address or a Dexscreener URL">
+          <small class="muted">Accepted: 0x..., or a Dexscreener link</small>
+        </div>
+        <button id="doAudit" class="btn audit notch">Audit now 🔍</button>
+      </div>
+      <div id="result" class="cards" style="margin-top:14px"></div>
+      <div id="err" class="muted"></div>
+    </div>
+
+    <div class="panel notch">
+      <h3>How we score it</h3>
+      <div class="list-inline" style="margin-bottom:10px">
+        <span class="badge">On-chain volume and txs</span>
+        <span class="badge">24h change and pair age</span>
+        <span class="badge">Liquidity and FDV ratio</span>
+        <span class="badge">Website, Twitter, Telegram, GitHub</span>
+        <span class="badge">Twitter followers boost</span>
+      </div>
+      <p class="muted">Hype is momentum-only. Safety is a soft heuristic using public signals. Not a guarantee.</p>
+    </div>
+  </section>
+
+  <section class="wrap panel notch" style="margin-top:16px">
+    <h3>📈 Trending on DevWifHat — searches & scores</h3>
+    <div id="board" class="board">
+      <!-- Most searched / Top hype / Top safety render here -->
+    </div>
+  </section>
+
+  <footer>
+    <div class="warning">Experimental signals. Not financial advice. DevWifHat is a meme with spreadsheets.</div>
+  </footer>
+
+<script>
+/* =================== CONFIG =================== */
+const API = "https://api.dexscreener.com/latest/dex";
+const CHAIN_ID = "pulsechain";
+/* ↓ coloque a URL do Worker quando publicar (ex.: https://devwifhat-api.seuuser.workers.dev) */
+const CF_API_BASE = "https://devwifhat-api.bongoapi.workers.dev"; // "" = só memória local
+
+/* =================== HELPERS =================== */
+const $ = (q)=>document.querySelector(q);
+const el = (t,c)=>{const d=document.createElement(t); if(c) d.className=c; return d;}
+const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+const isHex = (s)=>/^0x[0-9a-fA-F]{6,}$/.test(s);
+function num(n){ return Number(n).toLocaleString(undefined,{maximumFractionDigits:0}); }
+function fmtPct(n){ if(n==null) return '—'; return `${(n>0?'+':'')}${n.toFixed(2)}%`; }
+function format(n){ return Intl.NumberFormat('en',{notation:'compact'}).format(n); }
+function short(addr){ return addr ? addr.slice(0,6)+'…'+addr.slice(-4) : ''; }
+function setErr(msg){ $('#err').textContent = msg || ''; }
+
+/* meme toggle */
+$('#memeToggle').addEventListener('change', e=>{
+  document.body.style.filter = e.target.checked ? 'saturate(1.15) contrast(1.05)' : 'saturate(1) contrast(1)';
+});
+
+/* parse input */
+function parseQuery(input){
+  if(!input) return {value:""};
+  const raw = input.trim();
+  try{
+    const u = new URL(raw);
+    const hex = u.pathname.split("/").find(p=>isHex(p));
+    return {value: hex || raw};
+  }catch{ return {value: raw}; }
+}
+
+/* safe fetch json with timeout */
+async function safeJson(url, timeoutMs=12000){
+  const ctl = new AbortController();
+  const t = setTimeout(()=>ctl.abort(), timeoutMs);
+  try{
+    const r = await fetch(url, {headers:{Accept:"application/json"}, mode:"cors", signal:ctl.signal});
+    if(!r.ok) throw new Error(`HTTP ${r.status} @ ${url}`);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+/* ---------- Dexscreener fetchers ---------- */
+async function fetchBySearch(query){
+  try{
+    const j = await safeJson(`${API}/search?q=${encodeURIComponent(query)}`);
+    return (j.pairs||[]).filter(p=>p.chainId===CHAIN_ID);
+  }catch(e){ setErr(e.message); return []; }
+}
+async function fetchByTokenAddress(addr){
+  try{
+    const [a,b] = await Promise.allSettled([
+      safeJson(`${API}/tokens/${addr}`),
+      safeJson(`${API}/tokens/${CHAIN_ID}/${addr}`)
+    ]);
+    const arr = [];
+    if(a.status==='fulfilled') arr.push(...(a.value.pairs||[]));
+    if(b.status==='fulfilled') arr.push(...(b.value.pairs||[]));
+    return arr.filter(p=>p.chainId===CHAIN_ID);
+  }catch(e){ setErr(e.message); return []; }
+}
+async function fetchByPairAddress(addr){
+  try{
+    const [a,b] = await Promise.allSettled([
+      safeJson(`${API}/pairs/${CHAIN_ID}/${addr}`),
+      safeJson(`${API}/pairs/${addr}`)
+    ]);
+    const arr = [];
+    if(a.status==='fulfilled') arr.push(...(a.value.pairs||[]));
+    if(b.status==='fulfilled') arr.push(...(b.value.pairs||[]));
+    return arr;
+  }catch(e){ setErr(e.message); return []; }
+}
+async function fetchByChainAndFilter(filterText){
+  try{
+    const j = await safeJson(`${API}/chains/${CHAIN_ID}`);
+    let pairs = j.pairs||[];
+    if(filterText){
+      const q = String(filterText).toLowerCase();
+      pairs = pairs.filter(p =>
+        (p.baseToken?.symbol && String(p.baseToken.symbol).toLowerCase().includes(q)) ||
+        (p.baseToken?.name && String(p.baseToken.name).toLowerCase().includes(q)) ||
+        (p.pairAddress && String(p.pairAddress).toLowerCase()===q)
+      );
+    }
+    return pairs;
+  }catch(e){ setErr(e.message); return []; }
+}
+async function fetchPairs(query){
+  if(!query) return dedupeByBase(await fetchByChainAndFilter(""));
+  if(isHex(query)){
+    const res = await Promise.allSettled([fetchByPairAddress(query), fetchByTokenAddress(query)]);
+    const merged = []
+      .concat(res[0].status==='fulfilled' ? res[0].value : [])
+      .concat(res[1].status==='fulfilled' ? res[1].value : []);
+    if(merged.length) return dedupeByBase(merged);
+  }
+  let pairs = await fetchBySearch(query);
+  if(pairs.length) return dedupeByBase(pairs);
+  return dedupeByBase(await fetchByChainAndFilter(query));
+}
+function dedupeByBase(pairs){
+  const map=new Map();
+  for(const p of pairs){
+    const k=p?.baseToken?.address||p.pairAddress;
+    const prev=map.get(k);
+    if(!prev || (p?.volume?.h24||0)>(prev?.volume?.h24||0)) map.set(k,p);
+  }
+  return [...map.values()];
+}
+
+/* socials robusto (string ou objeto) */
+function firstUrl(arr){ if(!Array.isArray(arr)) return null; for(const it of arr){ if(typeof it==='string'&&it) return it; if(it&&typeof it==='object'){ if(it.url) return it.url; if(it.link) return it.link; if(it.href) return it.href; }} return null; }
+function findUrl(arr, matcher){ if(!Array.isArray(arr)) return null; for(const it of arr){ let s=null; if(typeof it==='string') s=it; else if(it&&typeof it==='object') s=it.url||it.link||it.href||null; if(typeof s==='string' && matcher(s)) return s; } return null; }
+function extractSocials(info){
+  const out={twitter:null,telegram:null,github:null,website:null};
+  if(!info) return out;
+  out.website = firstUrl(info.websites);
+  const list = Array.isArray(info.socials) ? info.socials : [];
+  out.twitter  = findUrl(list, u => /(?:twitter|x)\.com\//i.test(u));
+  out.telegram = findUrl(list, u => /t\.me\//i.test(u));
+  out.github   = findUrl(list, u => /github\.com\//i.test(u));
+  return out;
+}
+
+/* followers (twitter/x) */
+async function getTwitterFollowers(twUrl){
+  try{
+    if(!twUrl) return 0;
+    const m=twUrl.match(/(?:twitter|x)\.com\/([A-Za-z0-9_]+)/i);
+    if(!m) return 0;
+    const h=m[1];
+    const data=await safeJson(`https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${h}`, 8000).catch(()=>null);
+    return data?.[0]?.followers_count||0;
+  }catch{ return 0; }
+}
+
+/* scoring */
+function scoreHype(p, followers=0){
+  const v24=p?.volume?.h24||0;
+  const tx24=(p?.txns?.h24?.buys||0)+(p?.txns?.h24?.sells||0);
+  const ch24=Math.abs(p?.priceChange?.h24||0);
+  const ageMs=Date.now()-(p?.pairCreatedAt||Date.now()); const days=ageMs/86400000;
+  const sVol=clamp(v24/1_000_000,0,1)*40;
+  const sTx=clamp(tx24/3000,0,1)*25;
+  const sCh=clamp(ch24/100,0,1)*15;
+  const sAge=days<3?15:days<7?10:5;
+  const sFol=clamp(Math.log10(Math.max(1,followers))/5,0,1)*10;
+  return clamp(Math.round(sVol+sTx+sCh+sAge+sFol),0,100);
+}
+function scoreSafety(p, socials, followers=0){
+  const liq=p?.liquidity?.usd||0; const fdv=p?.fdv||0; const ratio=fdv>0?liq/fdv:0;
+  const sLiq=clamp(liq/100_000,0,1)*40;
+  const sRat=clamp(ratio*5,0,1)*20;
+  const sSoc=(socials.website?8:0)+(socials.twitter?8:0)+(socials.telegram?4:0)+(socials.github?10:0);
+  const sFol=clamp(Math.log10(Math.max(1,followers))/6,0,1)*10;
+  const days=(Date.now()-(p?.pairCreatedAt||Date.now()))/86400000;
+  const penalty=days<1?-10:0;
+  let total=clamp(Math.round(sLiq+sRat+sSoc+sFol+penalty),0,100);
+  return clamp(total,5,98);
+}
+
+/* ============ RENDER ============ */
+function badge(txt){const b=el("span","badge"); b.textContent=txt; return b;}
+function badgeLink(txt,href){const a=badge(txt); a.style.cursor="pointer"; a.onclick=()=>window.open(href,'_blank'); return a;}
+function ringSvg(score){
+  const pct=clamp(score,0,100); const r=52, c=2*Math.PI*r, off=c*(1-pct/100);
+  const col = pct>=75? 'var(--lime)' : pct>=50? 'var(--sun)' : 'var(--hot)';
+  return `<svg viewBox="0 0 130 130"><circle cx="65" cy="65" r="${r}" stroke="rgba(255,255,255,.08)" stroke-width="10" fill="none"/><circle cx="65" cy="65" r="${r}" stroke="${col}" stroke-width="10" fill="none" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" stroke-linecap="round"/><text x="65" y="70" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">${pct}</text><text x="65" y="90" text-anchor="middle" font-size="11" fill="#cfcaf5">Safety</text></svg>`;
+}
+function renderPairCard(p, hype, safety, followers, socials){
+  const c=el("div","card notch");
+  const head=el("div","head");
+  const ico=el("div","pic notch"); ico.style.setProperty('--n','8px'); ico.style.backgroundImage=`url(${p?.info?.imageUrl || 'logo.png'})`;
+  const ttl=el("div");
+  const token=el("div","token"); token.textContent=`${p.baseToken?.symbol || 'TOKEN'} / ${p.quoteToken?.symbol || ''}`;
+  const pair=el("div","pair"); pair.textContent=`${p.dexId?.toUpperCase() || 'DEX'} • ${p.chainId || ''}`;
+  ttl.appendChild(token); ttl.appendChild(pair);
+  const link=el("a","btn notch"); link.textContent="Open on Dexscreener"; link.href=p.url || p.pairUrl || "#"; link.target="_blank"; link.rel="noopener";
+  head.appendChild(ico); head.appendChild(ttl); head.appendChild(link);
+  c.appendChild(head);
+
+  const kv=el("div","kv");
+  kv.innerHTML=`
+    <div class="micro notch"><b>Price</b><br>${p.priceUsd?('$'+(+p.priceUsd).toFixed(6)):'—'}</div>
+    <div class="micro notch"><b>FDV</b><br>${p.fdv?('$'+num(p.fdv)):'—'}</div>
+    <div class="micro notch"><b>Liquidity</b><br>${p.liquidity?.usd?('$'+num(p.liquidity.usd)):'—'}</div>
+    <div class="micro notch"><b>Vol 24h</b><br>${p.volume?.h24?('$'+num(p.volume.h24)):'—'}</div>
+    <div class="micro notch"><b>Tx 24h</b><br>${(p.txns?.h24?.buys||0)+(p.txns?.h24?.sells||0)}</div>
+    <div class="micro notch"><b>Change 24h</b><br>${fmtPct(p.priceChange?.h24)}</div>`;
+  c.appendChild(kv);
+
+  const scores=el("div","row-scores");
+  const tBox=el("div","thermo"); const tLabel=el("div","label"); tLabel.textContent=`Hype ${hype}`;
+  const tFill=el("div","fill"); tFill.style.height=hype+"%";
+  const bubbles=el("div","bubbles"); for(let i=0;i<10;i++){ const b=el("span"); b.style.left=(5+i*9)+"%"; b.style.animationDelay=(i*.25)+"s"; bubbles.appendChild(b); }
+  tBox.appendChild(tLabel); tBox.appendChild(tFill); tBox.appendChild(bubbles);
+  const ring=el("div","ring notch"); ring.innerHTML=ringSvg(safety);
+  scores.appendChild(tBox); scores.appendChild(ring);
+  c.appendChild(scores);
+
+  const socialsWrap=el("div","list-inline"); socialsWrap.style.marginTop="10px";
+  if(socials.website) socialsWrap.appendChild(badgeLink("Website", socials.website));
+  if(socials.twitter) socialsWrap.appendChild(badgeLink("Twitter", socials.twitter));
+  if(socials.telegram) socialsWrap.appendChild(badgeLink("Telegram", socials.telegram));
+  if(socials.github) socialsWrap.appendChild(badgeLink("GitHub", socials.github));
+  socialsWrap.appendChild(badge(`Followers ${followers?format(followers):'0'}`));
+  c.appendChild(socialsWrap);
+
+  if(hype>=85) confetti(c, ["🔥","🚀","🧢","🦜"]);
+  if(safety<=25) confetti(c, ["🚩","🚩","🧯"]);
+  return c;
+}
+function confetti(container, arr){
+  for(let i=0;i<10;i++){
+    const s=el('div'); s.textContent=arr[i%arr.length]; s.style.position='absolute'; s.style.right=(Math.random()*10+2)+'px'; s.style.top=Math.random()*12+'px'; s.style.fontSize=(14+Math.random()*10)+'px'; s.style.filter='drop-shadow(0 0 6px rgba(255,255,255,.4))'; s.style.animation=`fly${i} 1.8s ease forwards`;
+    const key=`@keyframes fly${i}{from{transform:translate(0,0) rotate(0)}to{transform:translate(${(Math.random()*-120)-40}px,${(Math.random()*-120)-40}px) rotate(${Math.random()*200-100}deg);opacity:.1}}`; const style=document.createElement('style'); style.innerHTML=key; document.head.appendChild(style);
+    container.style.position='relative'; container.appendChild(s); setTimeout(()=>s.remove(),1900);
+  }
+}
+
+/* ============ STORAGE (local + Cloudflare) ============ */
+// Acúmulo local por sessão (fallback)
+const localStats = new Map(); // address -> {symbol,name,hype,safety,hits}
+function updateLocalStats(address, symbol, name, hype, safety){
+  const k = address.toLowerCase();
+  const cur = localStats.get(k) || {symbol,name,hype:0,safety:0,hits:0};
+  cur.symbol = symbol || cur.symbol; cur.name = name || cur.name;
+  cur.hype = Math.max(cur.hype, hype|0); cur.safety = Math.max(cur.safety, safety|0);
+  cur.hits += 1; localStats.set(k, cur);
+}
+function buildLocalBoard(){
+  const arr = [...localStats.entries()].map(([address, v])=>({address, ...v}));
+  const mostSearched = [...arr].sort((a,b)=>b.hits-a.hits).slice(0,10).map((x,i)=>({...x,rank:i+1}));
+  const topHype = [...arr].sort((a,b)=>b.hype-a.hype).slice(0,10).map((x,i)=>({...x,rank:i+1}));
+  const topSafety = [...arr].sort((a,b)=>b.safety-a.safety).slice(0,10).map((x,i)=>({...x,rank:i+1}));
+  return {mostSearched, topHype, topSafety};
+}
+async function cfPostRecord(rec){
+  if(!CF_API_BASE) return;
+  try{
+    await fetch(`${CF_API_BASE}/record`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(rec)
+    });
+  }catch(e){ console.warn('cf record fail', e); }
+}
+async function cfGetBoard(){
+  if(!CF_API_BASE) return buildLocalBoard();
+  try{
+    const j = await fetch(`${CF_API_BASE}/leaderboard`).then(r=>r.json());
+    return j;
+  }catch(e){ console.warn('cf leaderboard fail', e); return buildLocalBoard(); }
+}
+
+/* render board */
+function renderBoard(board){
+  const root = $('#board'); root.innerHTML='';
+  const col = (title, list, rightKey, rightLabel) => {
+    const c = el('div','col notch');
+    const h = el('h4'); h.textContent = title; c.appendChild(h);
+    list.forEach((it,idx)=>{
+      const r = el('div','rank notch');
+      const pos = el('div','pos'); pos.textContent = it.rank ?? (idx+1);
+      const meta = el('div'); const sym = el('div','sym'); sym.textContent = it.symbol || short(it.address);
+      const sm = el('small'); sm.textContent = short(it.address);
+      meta.appendChild(sym); meta.appendChild(sm);
+      const val = el('div'); val.style.marginLeft='auto'; val.innerHTML = `<b>${rightLabel}:</b> ${it[rightKey]||0}`;
+      r.appendChild(pos); r.appendChild(meta); r.appendChild(val);
+      r.onclick = ()=> window.open(`https://dexscreener.com/${CHAIN_ID}/${it.address}`,'_blank');
+      c.appendChild(r);
+    });
+    return c;
+  };
+  root.appendChild(col('Most searched', board.mostSearched||[], 'hits', 'Hits'));
+  root.appendChild(col('Top hype', board.topHype||[], 'hype', 'Hype'));
+  root.appendChild(col('Top safety', board.topSafety||[], 'safety', 'Safety'));
+}
+
+/* ============ ACTIONS ============ */
+async function auditInput(){
+  setErr('');
+  const q=$('#q').value.trim();
+  const {value}=parseQuery(q);
+  const result=$('#result'); result.innerHTML='';
+  const scan=el('div','badge'); scan.textContent='Scanning... magnifying like a bird with a hat';
+  result.appendChild(scan);
+
+  try{
+    const pairs=await fetchPairs(value);
+    result.innerHTML='';
+    if(!pairs.length){ result.innerHTML = `<div class="muted">No PulseChain pairs found for that query.</div>`; return; }
+    const p=pairs[0];
+    const socials=extractSocials(p.info);
+    const followers=await getTwitterFollowers(socials.twitter);
+    const hype=scoreHype(p, followers);
+    const safety=scoreSafety(p, socials, followers);
+    result.appendChild(renderPairCard(p,hype,safety,followers,socials));
+
+    // Atualiza stats locais + chama backend
+    const address = p.baseToken?.address || p.pairAddress;
+    updateLocalStats(address, p.baseToken?.symbol, p.baseToken?.name, hype, safety);
+    cfPostRecord({
+      address, chainId: p.chainId, symbol: p.baseToken?.symbol||null, name: p.baseToken?.name||null,
+      hype, safety
+    });
+    // Recarrega board
+    loadBoard();
+  }catch(err){
+    console.error(err);
+    setErr(err.message || 'Unknown fetch error');
+    result.innerHTML = `<div class="badge">Error fetching data. Try again.</div>`;
+  }
+}
+
+async function loadBoard(){
+  const data = await cfGetBoard();
+  renderBoard(data);
+}
+
+/* keys */
+document.addEventListener('keydown', e=>{
+  if(e.key && e.key.toLowerCase()==='h'){
+    const tgt=$('#result') || $('#board'); confetti(tgt,["🔥","🚀","🧢"]);
+  }
+});
+$('#doAudit').addEventListener('click', auditInput);
+$('#q').addEventListener('keydown', e=>{ if(e.key==='Enter') auditInput(); });
+
+loadBoard();
+</script>
+</body>
+</html>
+
